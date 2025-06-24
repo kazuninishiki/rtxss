@@ -21,6 +21,7 @@
 ## 📸 Screenshots
 
 ### Main Interface
+![Interface image](https://github.com/kazuninishiki/rtxss/blob/main/interface.png?raw=true)
 The web interface displays comprehensive GPU metrics including temperature, power consumption, memory usage, and PCIe information.
 
 ### System Tray
