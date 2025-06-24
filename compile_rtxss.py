@@ -204,6 +204,8 @@ def create_patched_script(main_script):
     # Find a good insertion point after imports but before classes
     insertion_point = content.find('# Configure enhanced logging')
     if insertion_point == -1:
+        insertion_point = content.find('class RTSSDataCollector')
+    if insertion_point == -1:
         insertion_point = content.find('class NvidiaDataCollector')
     if insertion_point == -1:
         insertion_point = content.find('logging.basicConfig')
@@ -269,7 +271,7 @@ if platform.system() == 'Windows':
         content = '\n'.join(lines)
     
     # Write patched script
-    patched_script = 'nvidia-gui-webserver-compiled.py'
+    patched_script = 'rtxss-compiled.py'
     with open(patched_script, 'w', encoding='utf-8') as f:
         f.write(content)
     
@@ -414,7 +416,7 @@ def cleanup_build_files():
         "__pycache__",
         "rtxss.spec",
         "rtxss_icon.ico",
-        "nvidia-gui-webserver-compiled.py"
+        "rtxss-compiled.py"
     ]
     
     for item in cleanup_items:

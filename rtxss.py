@@ -560,6 +560,81 @@ HTML_TEMPLATE = '''
             gap: var(--spacing-sm);
         }
         
+        /* Header Component */
+        .header {
+            background-color: var(--bg-secondary);
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: var(--spacing-md);
+        }
+        
+        .header-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: var(--accent-color);
+            margin: 0;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+        }
+        
+        .server-status {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            padding: var(--spacing-xs) var(--spacing-sm);
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border-color);
+            border-radius: var(--border-radius-sm);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 0.75rem;
+            height: 0.75rem;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+        }
+        
+        .status-indicator.server-up {
+            background-color: var(--success-color);
+            border-color: #27ae60;
+            box-shadow: 0 0 8px rgba(46, 204, 113, 0.6);
+        }
+        
+        .status-indicator.server-down {
+            background-color: var(--error-color);
+            border-color: #c0392b;
+            box-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+        }
+        
+        .status-indicator.server-connecting {
+            background-color: #f39c12;
+            border-color: #e67e22;
+            box-shadow: 0 0 8px rgba(243, 156, 18, 0.6);
+            animation: pulse 1.5s infinite;
+        }
+        
+        .status-text {
+            font-size: var(--font-size-base);
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        
         /* GPU Info Component */
         .gpu-section {
             background-color: var(--bg-secondary);
@@ -875,6 +950,17 @@ HTML_TEMPLATE = '''
             .footer-info {
                 justify-content: center;
             }
+            
+            .header-content {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+                gap: var(--spacing-sm);
+            }
+            
+            .header-title {
+                font-size: 1rem;
+            }
         }
         
         @media (max-width: 480px) {
@@ -963,6 +1049,16 @@ HTML_TEMPLATE = '''
 </head>
 <body>
     <div class="app-container">
+        <header class="header">
+            <div class="header-content">
+                <h1 class="header-title">RTXSS - Nvidia Video Card Statistics Server</h1>
+                <div class="server-status">
+                    <span class="status-indicator" id="serverStatus"></span>
+                    <span class="status-text" id="serverStatusText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+        
         <section class="gpu-section">
             <div class="table-container gpu-table-container">
                 <table id="gpuTable">
@@ -1162,11 +1258,22 @@ HTML_TEMPLATE = '''
         
         // Socket event handlers
         socket.on('connect', function() {
-            addToLog('Connected');
+            updateServerStatus('up', 'Server Online');
+            addToLog('Connected to server');
         });
         
         socket.on('disconnect', function() {
-            addToLog('Disconnected');
+            updateServerStatus('down', 'Server Offline');
+            addToLog('Disconnected from server');
+        });
+        
+        socket.on('connect_error', function() {
+            updateServerStatus('down', 'Connection Error');
+            addToLog('Connection error');
+        });
+        
+        socket.on('reconnect_attempt', function() {
+            updateServerStatus('connecting', 'Reconnecting...');
         });
         
         socket.on('gpu_update', function(data) {
@@ -1261,6 +1368,20 @@ HTML_TEMPLATE = '''
             .catch(error => addToLog('Error ' + error));
         }
         
+        function updateServerStatus(status, text) {
+            const indicator = document.getElementById('serverStatus');
+            const statusText = document.getElementById('serverStatusText');
+            
+            // Remove all status classes
+            indicator.classList.remove('server-up', 'server-down', 'server-connecting');
+            
+            // Add appropriate status class
+            indicator.classList.add('server-' + status);
+            
+            // Update status text
+            statusText.textContent = text;
+        }
+        
         function setUpdateInterval() {
             const interval = parseInt(document.getElementById('intervalInput').value);
             if (interval < 100 || interval > 10000) {
@@ -1315,6 +1436,9 @@ HTML_TEMPLATE = '''
         
         // Initialize when page loads
         document.addEventListener('DOMContentLoaded', function() {
+            // Set initial server status
+            updateServerStatus('connecting', 'Connecting...');
+            
             initCharts();
             addToLog('Interface ready');
             
